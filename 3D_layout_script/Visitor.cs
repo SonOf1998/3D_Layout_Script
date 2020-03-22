@@ -8,9 +8,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
+using _3D_layout_script.Attributes;
+using _3D_layout_script.Objects;
+
 using alert = Alert.Alert;
 using error = Alert.Error;
 using warning = Alert.Warning;
+using Attribute = _3D_layout_script.Attributes.Attribute;
 
 namespace _3D_layout_script
 {
@@ -444,15 +448,66 @@ namespace _3D_layout_script
         */
         public override object VisitObject_block([NotNull] DDD_layout_scriptParser.Object_blockContext context)
         {
-            
+            // adtodoa
 
             return base.VisitObject_block(context);
+        }
+
+        /* Attribútum mixin-t nézünk meg.
+         * 
+         * Végigmegyünk az összes benne foglalt attribútumon, és ami helyes azt hozzáadjuk az AttributeBlock listájához.
+         * Ami nem volt helyes, arre a VisitAttr dob majd egy warning-ot és szimplán nem vesszük figyelembe.
+         * A duplikátumokat a listába adás visszatérési értékével szűrjük, a false jelentése, hogy duplikátum keletkezett
+         * és a régebbi attribútum eltávolításra került. 
+         * Mindig a forráskódban lentebb lévő attribútum fogja hordozni a valódi értéket.
+         * 
+         * Kivétel a rotation-axis és rotation-angle, mert könnyen lehet, hogy a felhasználó forgatások sorozatát akarja alkalmazni.
+         */ 
+        public override object VisitAttr_group([NotNull] DDD_layout_scriptParser.Attr_groupContext context)
+        {
+            AttributeBlock attributeBlock = new AttributeBlock(context.STRING().GetText());
+
+            foreach(var attr in context.attr())
+            {
+                dynamic attrToAdd = VisitAttr(attr);
+                if (attrToAdd == null)
+                {
+                    continue;
+                }
+
+                attrToAdd = (Attribute)attrToAdd;
+                if (attributeBlock.Add(attrToAdd) == false)
+                {
+                    alerts.Add(new warning(attr.Start.Line, $"Attribute value '{attrToAdd.Name}' is set twice or more. Only the last defined will be valid"));
+                }
+            }
+
+            return attributeBlock;
+        }
+
+        /* Bal oldalt az attributum neve, jobb oldalt érték.
+         * 
+         * Megnézzük, hogy az attribútumhoz hozzáköthető-e az érték.
+         * Ha nem nullt adunk vissza, és errort írunk ki.
+         */
+        public override object VisitAttr([NotNull] DDD_layout_scriptParser.AttrContext context)
+        {
+            string attrName = context.ATTRIBUTE().GetText();
+            dynamic value = VisitOperation(context.operation());
+
+            if (!AttributeManager.CanBind(attrName,  Extensions.Extensions.ToString(value)))
+            {
+                alerts.Add(new warning(context.Start.Line, $"{AttributeManager.ErrorMsg}. Line ignored"));
+                return null;
+            }
+
+            return new Attribute(attrName, value);
         }
 
         /* Létrejozza az első scope-ot
          * Majd a teljes bejárás után hozzáadja a táblához az utolsót.
          * Visszaadott értékét nem használjuk.
-         */ 
+         */
         public override object VisitProgram([NotNull] DDD_layout_scriptParser.ProgramContext context)
         {
             currentScope = new Scope();

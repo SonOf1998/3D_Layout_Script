@@ -54,6 +54,10 @@
     <Compile Include="Alert\Alert.cs" />
     <Compile Include="Alert\Error.cs" />
     <Compile Include="Assigner.cs" />
+    <Compile Include="Attributes\Attribute.cs" />
+    <Compile Include="Attributes\AttributeBlock.cs" />
+    <Compile Include="Attributes\AttributeList.cs" />
+    <Compile Include="Attributes\AttributeManager.cs" />
     <Compile Include="BinaryOperation.cs" />
     <Compile Include="Comparator.cs" />
     <Compile Include="DDD_layout_script.g4.lexer.cs">
