@@ -64,7 +64,16 @@
     </Compile>
     <Compile Include="ErrorObject.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Objects\Circle.cs" />
+    <Compile Include="Objects\Cone.cs" />
+    <Compile Include="Objects\Cube.cs" />
+    <Compile Include="Objects\Cuboid.cs" />
+    <Compile Include="Objects\Cylinder.cs" />
     <Compile Include="Objects\DDDObject.cs" />
+    <Compile Include="Objects\Hemisphere.cs" />
+    <Compile Include="Objects\Quad.cs" />
+    <Compile Include="Objects\Sphere.cs" />
+    <Compile Include="Objects\Triangle.cs" />
     <Compile Include="OtherBinaryOperation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
