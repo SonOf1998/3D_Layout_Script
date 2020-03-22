@@ -1,4 +1,4 @@
-﻿//#define RELEASE
+﻿#define RELEASE
 
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
@@ -8,26 +8,42 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
+using alert = Alert.Alert;
+using error = Alert.Error;
+using warning = Alert.Warning;
+
 namespace _3D_layout_script
 {
     class Visitor : DDD_layout_scriptBaseVisitor<object>
     {
+        HashSet<alert> alerts;
         Stack<Scope> symbolTable;
         Scope currentScope;
 
         public Visitor()
         {
             symbolTable = new Stack<Scope>();
+            alerts = new HashSet<alert>();
         }
 
         public void PrintSymbolTree()
         {
+#if !RELEASE
             int i = symbolTable.Count;
             foreach(Scope s in symbolTable)
             {
                 Console.WriteLine($"----------- SCOPE {i} -----------");
                 s.PrintSymbolTable();
                 --i;
+            }
+#endif
+        }
+
+        public void PrintErrorsToConsole()
+        {
+            foreach(var alert in alerts)
+            {
+                Console.WriteLine($"{alert.GetAlertType()} at line {alert.LineNumber}: {alert.Msg}");
             }
         }
 
@@ -45,10 +61,16 @@ namespace _3D_layout_script
         {
             if (success)
             {
+                string warningMsg = currentScope.WarningMsg;
+                if (warningMsg != null)
+                {
+                    alerts.Add(new warning(context.start.Line, warningMsg));
+                }
+
                 return;
             }
 
-            Console.WriteLine($"{GetLineNumberForError(context)} {Scope.ErrorMsg}");
+            alerts.Add(new error(context.Start.Line, Scope.ErrorMsg));
         }
 
         private string GetVariableTypeByName(string id)
@@ -101,8 +123,7 @@ namespace _3D_layout_script
 
             return ret;
         }
-
-
+        
         private bool SetVariableValueByName(string id, dynamic value, ParserRuleContext context)
         {
             return SetVariableValueByName(id, value, null, context);
@@ -126,11 +147,11 @@ namespace _3D_layout_script
                 string warningMsg = obo.WarningMsg;
                 if (warningMsg != null)
                 {
-                    Console.WriteLine($"{GetLineNumberForWarning(context)} {warningMsg}");
+                    alerts.Add(new warning(context.Start.Line, warningMsg));
                 }
                 if (newValue == null)
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} {obo.ErrorMsg}");
+                    alerts.Add(new error(context.Start.Line, obo.ErrorMsg));
                     return false;
                 }
 
@@ -168,7 +189,7 @@ namespace _3D_layout_script
                 }
                 else
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} {Assigner.ErrorMsg}");
+                    alerts.Add(new error(context.Start.Line, Assigner.ErrorMsg));
                     return false;
                 }
             }
@@ -179,6 +200,8 @@ namespace _3D_layout_script
             return true;
         }
         
+
+
 
         /* Egyszerű kifejezések. (hivatkozás másik változóra, érték valahol, vec3 koordinátájának lekérése)
          * 
@@ -195,7 +218,7 @@ namespace _3D_layout_script
                 // ha nincs meg a változó, akkor error objectet adunk vissza, mint a simple expression kiértékelése
                 if (GetVariableByName(id) == null)
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} Using of undeclared variable ({id})");
+                    alerts.Add(new error(context.Start.Line, $"Using of undeclared variable ({id})"));
                     return new ErrorObject();
                 }
 
@@ -252,7 +275,7 @@ namespace _3D_layout_script
                 // valamelyik koordináta vec3 volt, annak nincs értelme
                 if (executedOperationValues[i] is vec3)
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} {operationArr[i].GetText()} evaluates to vec3");
+                    alerts.Add(new error(context.Start.Line, $"{operationArr[i].GetText()} evaluates to vec3"));
                     ok = false;
                 }
 
@@ -282,7 +305,7 @@ namespace _3D_layout_script
             // nem inicializált változóból olvasás
             if (value is UnitializedObject)
             {
-                Console.WriteLine($"{GetLineNumberForError(context)} Uninitialized value {id}");
+                alerts.Add(new error(context.Start.Line, $" Uninitialized value {id}"));
                 return null;
             }
             // a hivatkozott változó vec3, a normál use-case
@@ -305,7 +328,7 @@ namespace _3D_layout_script
                 }
             }
             // nem vec3-ra hivatkozott a változó
-            Console.WriteLine($"{GetLineNumberForError(context)} {id} doesn't refer to a vec3 instance");
+            alerts.Add(new error(context.Start.Line, $"{id} doesn't refer to a vec3 instance"));
                 
             return null;
         }
@@ -351,18 +374,18 @@ namespace _3D_layout_script
                             string warningMsg = op.WarningMsg;
                             if (warningMsg != null)
                             {
-                                Console.WriteLine($"{GetLineNumberForWarning(context)} {warningMsg}");
+                                alerts.Add(new warning(context.Start.Line, warningMsg));
                             }
                             
                             if (opResult is UnitializedObject)
                             {
-                                Console.WriteLine($"{GetLineNumberForError(context)} Using of uninitialized variable");
+                                alerts.Add(new error(context.Start.Line, "Using of uninitalized variable"));
                                 return new ErrorObject();
                             }
 
                             if (opResult == null)
                             {
-                                Console.WriteLine($"{GetLineNumberForError(context)} {op.ErrorMsg}");
+                                alerts.Add(new error(context.Start.Line, op.ErrorMsg));
                                 return new ErrorObject();
                             }
                                 
@@ -379,13 +402,13 @@ namespace _3D_layout_script
 
                         if (opResult is UnitializedObject)
                         {
-                            Console.WriteLine($"{GetLineNumberForError(context)} Using of uninitialized variable");
+                            alerts.Add(new error(context.Start.Line, "Using of uninitalized variable"));
                             return new ErrorObject();
                         }
 
                         if (opResult == null)
                         {
-                            Console.WriteLine($"{GetLineNumberForError(context)} {op.ErrorMsg}");
+                            alerts.Add(new error(context.Start.Line, op.ErrorMsg));
                             return new ErrorObject();
                         }
 
@@ -399,6 +422,7 @@ namespace _3D_layout_script
             return opValues[0];
         }
 
+        /* Kis sturktúrális áttervezés volt.. TODO */
         public override object VisitOperation_helper([NotNull] DDD_layout_scriptParser.Operation_helperContext context)
         {
             if (context.simple_expression() != null)
@@ -414,9 +438,14 @@ namespace _3D_layout_script
             return null;
         }
 
+        /*
+         * 
+         * OBJECT_TYPE CURLY_O object_content CURLY_C;
+        */
         public override object VisitObject_block([NotNull] DDD_layout_scriptParser.Object_blockContext context)
         {
-            symbolTable.Push(currentScope);
+            
+
             return base.VisitObject_block(context);
         }
 
@@ -516,7 +545,7 @@ namespace _3D_layout_script
 
             if (leftSide is ErrorObject || leftSide is UnitializedObject || rightSide is ErrorObject || rightSide is UnitializedObject)
             {
-                Console.WriteLine($"{GetLineNumberForError(context)} Uninterpretable if condition");
+                alerts.Add(new error(context.Start.Line, "Uninterpretable if condition"));
                 return false;
             }
 
@@ -530,7 +559,7 @@ namespace _3D_layout_script
             {
                 if (comparator.HasErrorMsg)
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} {comparator.ErrorMsg}");
+                    alerts.Add(new error(context.Start.Line, comparator.ErrorMsg));
                 }                
             }
 
@@ -559,53 +588,61 @@ namespace _3D_layout_script
             // ha bármelyik nem int vagy float, akkor ott hiba van
             if (!(rangeStart is double || rangeStart is int) || !(rangeEnd is double || rangeEnd is int) || !(step is int || step is double))
             {
-                Console.WriteLine($"{GetLineNumberForError(context)} Range and step can only hold Int or Float values");
+                alerts.Add(new error(context.Start.Line, "Range and step can only hold Int or Float values"));
                 return null;
             }
 
             if (rangeStart is double)
             {
-                Console.WriteLine($"{GetLineNumberForWarning(context)} The start of the range is casted from Float to Int. You may ignore this warning.");
+                alerts.Add(new warning(context.Start.Line, "The start of the range is casted from Float to Int. You may ignore this warning"));
                 rangeStart = (int)rangeStart;
             }
 
             if (rangeEnd is double)
             {
-                Console.WriteLine($"{GetLineNumberForWarning(context)} The end of the range is casted from Float to Int. You may ignore this warning.");
+                alerts.Add(new warning(context.Start.Line, "The end of the range is casted from Float to Int. You may ignore this warning"));
                 rangeEnd = (int)rangeEnd;
             }
 
             if (step is double)
             {
-                Console.WriteLine($"{GetLineNumberForWarning(context)} The step is casted from Float to Int. You may ignore this warning.");
+                alerts.Add(new warning(context.Start.Line, "The step is casted from Float to Int. You may ignore this warning"));
                 step = (int)step;
             }
 
             if (context.BRACKET_O() != null)
             {
-                rangeStart += 1;
+                rangeStart += (step > 0) ? 1 : -1;
             }
 
             if (context.BRACKET_C() != null)
             {
-                rangeEnd -= 1;
+                rangeEnd -= (step > 0) ? 1 : -1;
             }
 
             if (step == 0)
             {
-                Console.WriteLine($"{GetLineNumberForError(context)} Step was 0. This would cause an infinite loop");
+                alerts.Add(new error(context.Start.Line, "Step was 0. This would cause an infinite loop"));
                 return null;
             }
 
             if ((step > 0 && rangeEnd - rangeStart < 0) || (step < 0 && rangeEnd - rangeStart > 0))
             {
-                Console.WriteLine($"{GetLineNumberForError(context)} Infinite loop. [Range: {rangeStart}..{rangeEnd}, Step: {step}]");
+                alerts.Add(new error(context.Start.Line, $"Infinite loop. [Range: {rangeStart}..{rangeEnd}, Step: {step}]"));
                 return null;
             }
-
+            
             return new Tuple<int, int, int>(rangeStart, rangeEnd, step);
         }
 
+        /* For ciklus ténylegesen.
+         * 
+         * A for ciklus létrehoz egy új scope-ot. Ha a feltétel iterátora már definiálva van, akkor hibát jelezve
+         * nem foglalkozunk a for ciklus értelmezésével és a scope-ot megszüntetjük.
+         * 
+         * Egyébként létrehozunk egy speciális iterátor változót (belsőbb scope-ok nem name shadowolhatnak iterátort!).
+         * Majd feldolgozzuk a kifejezéseket egy ciklusban.
+         */ 
         public override object VisitFor_loop([NotNull] DDD_layout_scriptParser.For_loopContext context)
         {
             currentScope = new Scope();
@@ -614,10 +651,47 @@ namespace _3D_layout_script
             Tuple<int, int, int> rangeStepTriple = (Tuple<int, int, int>)VisitRange_and_step(context.range_and_step());
             if (rangeStepTriple != null)
             {
+                string iteratorName = context.ID().GetText();
 
+                if (GetVariableByName(iteratorName) != null)
+                {
+                    alerts.Add(new error(context.Start.Line, $"Redefinition of variable '{iteratorName}'. Change the name of the iterator!"));
+#if RELEASE
+                    symbolTable.Pop();
+                    currentScope = symbolTable.Peek();
+#endif
+                    return null;
+                }
+                
+                int start = rangeStepTriple.Item1;
+                int end = rangeStepTriple.Item2;
+                int step = rangeStepTriple.Item3;
+
+                currentScope.Add(new Symbol(false, true, "Int", iteratorName), start);
+
+                for (int i = start; step > 0 ? i <= end : i >= end; )
+                {
+                    currentScope = new Scope();
+                    symbolTable.Push(currentScope);
+
+
+                    var statementsInsideForLoop = context.for_loop_statement();
+                    foreach (var statement in statementsInsideForLoop)
+                    {
+                        VisitFor_loop_statement(statement);
+                    }
+                    
+                    SetVariableValueByName(iteratorName, GetVariableValueByName(iteratorName) + step, context);
+                    i = GetVariableValueByName(iteratorName);
+
+                    //Tracer.Print(symbolTable);
+#if RELEASE
+            symbolTable.Pop();
+            currentScope = symbolTable.Peek();
+#endif
+                }
             }
-
-            base.VisitFor_loop(context);
+            
 #if RELEASE
             symbolTable.Pop();
             currentScope = symbolTable.Peek();
@@ -626,7 +700,18 @@ namespace _3D_layout_script
             return null;
         }
 
+        /* For ciklusban ezek egyike lehet:
+         * variable_decl | assign_statement | object_block | for_loop | if_statement;
+         * 
+         * Ezeket kellene bejárni. Erre pont jó az alaposztály Visit függvénye.
+         */
+        public override object VisitFor_loop_statement([NotNull] DDD_layout_scriptParser.For_loop_statementContext context)
+        {
+            return base.VisitFor_loop_statement(context);
+        }
+
         /* Váltózó inicializálását nézi meg.
+         * TODO: nameshadowing warningok
         */
         public override object VisitVariable_decl([NotNull] DDD_layout_scriptParser.Variable_declContext context)
         {
@@ -640,22 +725,22 @@ namespace _3D_layout_script
                 // nincsen jobb oldal sem
                 if (op == null)
                 {           
-                    ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Unknown", idStr), VisitOperation(op)));
+                    ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Unknown", idStr), VisitOperation(op), new Stack<Scope>(symbolTable)));
                 }
                 // jobb oldalon egy float van
                 else if (Regex.IsMatch(op.GetText(), @"^([0-9]*)?\.[0-9]+f?$"))
                 {
-                    ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Float", idStr), VisitOperation(op)));
+                    ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Float", idStr), VisitOperation(op), new Stack<Scope>(symbolTable)));
                 }
                 // jobb oldalon egy int van
                 else if (Regex.IsMatch(op.GetText(), @"^[0-9]+$"))
                 {
-                    ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Int", idStr), VisitOperation(op)));
+                    ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Int", idStr), VisitOperation(op), new Stack<Scope>(symbolTable)));
                 }
                 // jobb oldalon egy vec3 van
                 else if (Regex.IsMatch(op.GetText(), @"^\[[^,]+,[^,]+,[^,]+\]$"))
                 {
-                    ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Vec3", idStr), VisitOperation(op)));
+                    ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Vec3", idStr), VisitOperation(op), new Stack<Scope>(symbolTable)));
                 }
                 // jobb oldalon valami kifejezés van
                 else
@@ -663,13 +748,13 @@ namespace _3D_layout_script
                     // vektor jöhet ki végeredményül, int, float már tuti nem
                     if (op.GetText().Contains("["))
                     {
-                        ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Vec3", idStr), VisitOperation(op)));
+                        ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Vec3", idStr), VisitOperation(op), new Stack<Scope>(symbolTable)));
                     }
                     // bármi kijöhet 
                     else
                     {
                         dynamic result = VisitOperation(op);
-                        ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, Extensions.Extensions.ToString(result), idStr), result));
+                        ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, Extensions.Extensions.ToString(result), idStr), result, new Stack<Scope>(symbolTable)));
                     }
                 }
             }
@@ -678,13 +763,13 @@ namespace _3D_layout_script
                 switch (context.TYPE().GetText())
                 {
                     case "Float":
-                        ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Float", idStr), VisitOperation(op)));
+                        ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Float", idStr), VisitOperation(op), new Stack<Scope>(symbolTable)));
                         break;
                     case "Int":
-                        ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Int", idStr), VisitOperation(op)));
+                        ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Int", idStr), VisitOperation(op), new Stack<Scope>(symbolTable)));
                         break;
                     case "Vec3":
-                        ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Vec3", idStr), VisitOperation(op)));
+                        ErrorHandlingOrCommit(context, currentScope.Add(new Symbol(context.CONST() != null, "Vec3", idStr), VisitOperation(op), new Stack<Scope>(symbolTable)));
                         break;
 
                 }
@@ -709,12 +794,12 @@ namespace _3D_layout_script
                 dynamic value = GetVariableValueByName(id);
                 if (value == null)
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} Cannot assign to an undefined variable {id}");
+                    alerts.Add(new error(context.Start.Line, $"Cannot assign to an undefined variable {id}"));
                     return null;
                 }
                 if (symbol.Const && !(value is UnitializedObject))
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} Left hand side refers to a constant expression {id}");
+                    alerts.Add(new error(context.Start.Line, $"Left hand side refers to a constant expression {id}"));
                     return null;
                 }
 
@@ -731,7 +816,7 @@ namespace _3D_layout_script
                 {
                     if (value is UnitializedObject)
                     {
-                        Console.WriteLine($"{GetLineNumberForError(context)} You cannot use += -= *= /= on an uninitalized variable ({id})");
+                        alerts.Add(new error(context.Start.Line, $"You cannot use += -= *= /= on an uninitalized variable ({id})"));
                         return null;
                     }
 
@@ -750,22 +835,22 @@ namespace _3D_layout_script
 
                 if (value == null)
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} Cannot assign to an undefined variable {id}");
+                    alerts.Add(new error(context.Start.Line, $"Cannot assign to an undefined variable {id}"));
                     return null;
                 }
                 if (symbol.Const && !(value is UnitializedObject))
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} Left hand side refers to a constant expression {id}");
+                    alerts.Add(new error(context.Start.Line, $"Left hand side refers to a constant expression {id}"));
                     return null;
                 }
                 if (symbol.Type != "Vec3" && symbol.Type != "Unknown")
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} Cannot access coordinates of a non Vec3 type");
+                    alerts.Add(new error(context.Start.Line, "Cannot access coordinates of a non Vec3 type"));
                     return null;
                 }
                 else if (value is UnitializedObject)
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} Accessing coordinates of an unitialized Vec3");
+                    alerts.Add(new error(context.Start.Line, "Accessing coordinates of an unitialized Vec3"));
                     return null;
                 }
 
@@ -775,7 +860,7 @@ namespace _3D_layout_script
 
                 if (!Assigner.CanAssign("Float", opValue))
                 {
-                    Console.WriteLine($"{GetLineNumberForError(context)} {Assigner.ErrorMsg}");
+                    alerts.Add(new error(context.Start.Line, Assigner.ErrorMsg));
                     return null;
                 }
 

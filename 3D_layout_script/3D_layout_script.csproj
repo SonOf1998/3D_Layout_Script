@@ -51,6 +51,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Alert\Alert.cs" />
+    <Compile Include="Alert\Error.cs" />
     <Compile Include="Assigner.cs" />
     <Compile Include="BinaryOperation.cs" />
     <Compile Include="Comparator.cs" />
@@ -62,14 +64,17 @@
     </Compile>
     <Compile Include="ErrorObject.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Objects\DDDObject.cs" />
     <Compile Include="OtherBinaryOperation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Scope.cs" />
     <Compile Include="Symbol.cs" />
+    <Compile Include="Tracing\Tracer.cs" />
     <Compile Include="UnitializedObject.cs" />
     <Compile Include="vec3.cs" />
     <Compile Include="Visitor.cs" />
+    <Compile Include="Alert\Warning.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

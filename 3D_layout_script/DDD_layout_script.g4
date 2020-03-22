@@ -76,7 +76,7 @@ variable_decl:          (CONST)? VAR ID (COLON TYPE)?  (EQ operation)? SEMI;
 assign_statement:       (simple_modifyable_exp EQ operation SEMI) |
                         (simple_modifyable_exp other_binary_op operation SEMI);
 
-ATTRIBUTE:          'radius' | 'position' | 'height' | 'width' | 'depth' | 'rotation-axis' | 'rotation-angle' | 'quality';
+ATTRIBUTE:          'radius' | 'position' | 'height' | 'width' | 'depth' | 'rotation-axis' | 'rotation-angle';
 attribute_value:    operation | STRING;
 attr:               ATTRIBUTE COLON attribute_value SEMI;
 attr_list:          (attr)+;

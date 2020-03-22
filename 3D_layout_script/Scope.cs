@@ -3,11 +3,25 @@ using System.Collections.Generic;
 
 namespace _3D_layout_script
 {
-    class Scope
+    public class Scope
     {
         // Symbol (type, id) + std::variant value
-        Dictionary<Symbol, dynamic> table;
+        public Dictionary<Symbol, dynamic> table;
         public static string ErrorMsg { get; private set; }
+        private string warningMsg;
+        public string WarningMsg
+        {
+            get
+            {
+                string copy = warningMsg;
+                warningMsg = null;
+                return copy;
+            }
+            set
+            {
+                warningMsg = value;
+            }
+        }
 
         public Scope()
         {
@@ -29,6 +43,8 @@ namespace _3D_layout_script
             }
         }
 
+        // úgy adja hozzá, hogy csak az adott scope-ban néz egyezést
+        // így hozzuk létre az iterátorokat
         public bool Add(Symbol symbol, dynamic value)
         {
             foreach (KeyValuePair<Symbol, dynamic> pair in table)
@@ -50,9 +66,50 @@ namespace _3D_layout_script
             return true;
         }
 
-        public bool Add(Symbol symbol)
+        // minden scope-ban nézünk egyezést. Az első-be ismétlődés találásánál errort dobunk.
+        // a többiben figyelmeztetjük a programozót, hogy name shadow-ol
+        public bool Add(Symbol symbol, dynamic value, Stack<Scope> scopeStack)
         {
-            return Add(symbol, null);
+            foreach (KeyValuePair<Symbol, dynamic> pair in table)
+            {
+                if (pair.Key.Name == symbol.Name)
+                {
+                    ErrorMsg = $"Redefinition of variable '{symbol.Name}'";
+                    return false;
+                }
+            }
+            
+            if (scopeStack.Count != 0)
+            {
+                scopeStack.Pop();   // a mostani scope-ot kivesszök
+
+                foreach (var scope in scopeStack)
+                {
+                    foreach (KeyValuePair<Symbol, dynamic> pair in scope.table)
+                    {
+                        if (pair.Key.Name == symbol.Name && pair.Key.IsIterator == false)
+                        {
+                            WarningMsg = $"Name shadowing. There is already a variable defined as '{symbol.Name}'";
+                            break;
+                        }
+                        else if (pair.Key.Name == symbol.Name && pair.Key.IsIterator == true)
+                        {
+                            ErrorMsg = $"Name shadowing. You cannot declare a variable with the name of an iterator ({symbol.Name})";
+                            return false;
+                        }
+                    }
+                }
+            }
+            
+            
+            if (!Assigner.CanAssign(symbol.Type, value))
+            {
+                ErrorMsg = Assigner.ErrorMsg;
+                return false;
+            }
+
+            table[symbol] = value;
+            return true;
         }
 
         public dynamic GetValue(string id)
@@ -106,9 +163,10 @@ namespace _3D_layout_script
                 string original_type = GetType(id);         
                 string type = original_type == "Unknown" ? Extensions.Extensions.ToString(value) : original_type;
                 bool isConst = keyToRemove.Const;
+                bool isIter = keyToRemove.IsIterator;
 
                 table.Remove(keyToRemove);
-                table.Add(new Symbol(isConst, type, id), value);
+                table.Add(new Symbol(isConst, isIter, type, id), value);
             }
 
             return false;

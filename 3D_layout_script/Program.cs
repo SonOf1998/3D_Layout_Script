@@ -43,6 +43,7 @@ namespace _3D_layout_script
             var visitor = new Visitor();
             visitor.Visit(ast);
 
+            visitor.PrintErrorsToConsole();
             visitor.PrintSymbolTree();
             
             
