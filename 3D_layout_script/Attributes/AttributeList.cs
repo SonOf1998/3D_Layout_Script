@@ -34,5 +34,10 @@ namespace _3D_layout_script.Attributes
         {
             return list;
         }
+
+        public IEnumerator<Attribute> GetEnumerator()
+        {
+            return list.GetEnumerator();
+        }
     }
 }

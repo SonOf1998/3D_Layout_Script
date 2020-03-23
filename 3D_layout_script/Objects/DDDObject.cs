@@ -1,22 +1,88 @@
 ﻿using System.Collections.Generic;
+using _3D_layout_script.Attributes;
 
 namespace _3D_layout_script.Objects
 {
     public abstract class DDDObject
     {
+        private string warningMsg;
+        public string WarningMsg
+        {
+            get
+            {
+                string copy = warningMsg;
+                warningMsg = null;
+                return copy;
+            }
+            set
+            {
+                warningMsg = value;
+            }
+        }
+
         protected HashSet<string> allowedAttributes;
 
-        public vec3         Position { get; set; }
-        public List<vec3>   RotationAxes;
-        public List<double> RotationAngles;
+        protected vec3         position;
+        protected List<vec3>   rotationAxes;
+        protected List<double> rotationAngles;
 
         public DDDObject()
         {
+            allowedAttributes = new HashSet<string>();
+
             allowedAttributes.Add("position");
             allowedAttributes.Add("rotation-axis");
-            allowedAttributes.Add("rotation-angles");
+            allowedAttributes.Add("rotation-angle");
         }
 
-        // public abstract ... GENERATE() <--- TODO
+        public virtual bool SetAttributes(AttributeList attrList)
+        {
+            bool ret = true;    // Minden attribútum sikeresen hozzáadódott.
+
+            foreach (var attr in attrList)
+            {
+                if (!allowedAttributes.Contains(attr.Name))
+                {
+                    ret = false;
+                }
+
+
+                switch (attr.Name)
+                {
+                    case "position":
+                        position = attr.Value;
+                        break;
+                    case "rotation-angle":
+                        //TODO
+                        break;
+                    case "rotation-axis":
+                        //TODO
+                        break;
+                    case "default":
+                        // ősosztály valósítja meg
+                        break;
+                }
+            }
+
+            if (ret == false)
+            {
+                string wMsg = "";
+                foreach (var attrName in allowedAttributes)
+                {
+                    wMsg += attrName + ", ";
+                }
+                wMsg = wMsg.Remove(wMsg.Length - 2);
+                WarningMsg = wMsg;
+            }
+
+            return ret;
+        }
+
+        //public abstract void GENERATE() <--- TODO
+
+        public virtual void GenerateStandaloneObj()
+        {
+
+        }
     }
 }

@@ -16,28 +16,28 @@
                     ErrorMsg = "Position can only hold Vec3 values";
                     break;
                 case "radius":
-                    if (type == "Int" && type == "Float")
+                    if (type == "Int" || type == "Float")
                     {
                         return true;
                     }
                     ErrorMsg = "Radius can only hold Int and Float values";
                     break;
                 case "height":
-                    if (type == "Int" && type == "Float")
+                    if (type == "Int" || type == "Float")
                     {
                         return true;
                     }
                     ErrorMsg = "Height can only hold Int and Float values";
                     break;
                 case "width":
-                    if (type == "Int" && type == "Float")
+                    if (type == "Int" || type == "Float")
                     {
                         return true;
                     }
                     ErrorMsg = "Width can only hold Int and Float values";
                     break;
                 case "depth":
-                    if (type == "Int" && type == "Float")
+                    if (type == "Int" || type == "Float")
                     {
                         return true;
                     }
@@ -51,7 +51,7 @@
                     ErrorMsg = "Rotation-axis can only hold Vec3 values";
                     break;
                 case "rotation-angle":
-                    if (type == "Int" && type == "Float")
+                    if (type == "Int" || type == "Float")
                     {
                         return true;
                     }

@@ -21,6 +21,8 @@ namespace _3D_layout_script
     class Visitor : DDD_layout_scriptBaseVisitor<object>
     {
         HashSet<alert> alerts;
+        List<AttributeBlock> attributeBlocks;
+        List<DDDObject> DDDObjects;
         Stack<Scope> symbolTable;
         Scope currentScope;
 
@@ -28,6 +30,8 @@ namespace _3D_layout_script
         {
             symbolTable = new Stack<Scope>();
             alerts = new HashSet<alert>();
+            attributeBlocks = new List<AttributeBlock>();
+            DDDObjects = new List<DDDObject>();
         }
 
         public void PrintSymbolTree()
@@ -448,9 +452,122 @@ namespace _3D_layout_script
         */
         public override object VisitObject_block([NotNull] DDD_layout_scriptParser.Object_blockContext context)
         {
-            // adtodoa
+            DDDObject dddObject = null;
 
-            return base.VisitObject_block(context);
+            switch (context.OBJECT_TYPE().GetText())
+            {
+                case "circle":
+                    dddObject = new Circle();
+                    break;
+                case "cone":
+                    dddObject = new Cone();
+                    break;
+                case "cube":
+                    dddObject = new Cube();
+                    break;
+                case "cuboid":
+                    dddObject = new Cuboid();
+                    break;
+                case "cylinder":
+                    dddObject = new Cylinder();
+                    break;
+                case "hemisphere":
+                    dddObject = new Hemisphere();
+                    break;
+                case "quad":
+                    dddObject = new Quad();
+                    break;
+                case "sphere":
+                    dddObject = new Sphere();
+                    break;
+                case "triangle":
+                    dddObject = new Triangle();
+                    break;
+                default:
+                    alerts.Add(new error(context.Start.Line, $"Undefined object type {context.OBJECT_TYPE().GetText()}"));
+                    return null;
+            }
+
+            AttributeList attributeList = (AttributeList)VisitObject_content(context.object_content()); 
+            if (attributeList == null)
+            {
+                return null;
+            }
+
+            if (dddObject.SetAttributes(attributeList) == false)
+            {
+                alerts.Add(new warning(context.Start.Line, $"For '{context.OBJECT_TYPE().GetText()}' [{dddObject.WarningMsg}] attributes are defined. Others will be ignored"));
+            }
+
+            return dddObject;
+        }
+
+        /* 3D objektumok attribútumlistáját készíti elő.
+         * 
+         * Készít egy AttributeListet. (Add-ja kezeli a duplikátumokat és warningot dob)
+         * Végigmegy az összes beincludolt attr-group-on és hozzáadja az attr-group listáit.
+         * Ha nem talál egy attr-group-ot az persze error.
+         * 
+         * Ezután az összes nem attr-groupból származó attribútumon is végigmegy. Ezeket is hozzáadja a közös listához.
+         */ 
+        public override object VisitObject_content([NotNull] DDD_layout_scriptParser.Object_contentContext context)
+        {
+            var includes = context.include_statement();
+            List<AttributeList> attributeLists = new List<AttributeList>();
+            AttributeList objectAttributes = new AttributeList();
+            
+            foreach (var include in includes)
+            {
+                string attrGroupToFind = include.STRING().ToString();
+                bool addingSuccessful = false;
+                foreach (var attrBlock in attributeBlocks)
+                {
+                    if (attrBlock.Name == attrGroupToFind)
+                    {
+                        attributeLists.Add(attrBlock.GetAttributeList());
+                        addingSuccessful = true;
+                        break;
+                    }
+
+                    if (!addingSuccessful)
+                    {
+                        alerts.Add(new error(include.Start.Line, $"Attr-group {attrGroupToFind} has not been declared"));
+                    }
+                }
+            }
+
+            if (attributeLists.Count != 0)
+            {
+                for (int i = 0; i < attributeLists.Count; ++i)
+                {
+                    List<Attribute> attrs = attributeLists[i].GetAttributeList();
+
+                    foreach (Attribute a in attrs)
+                    {
+                        if (objectAttributes.Add(a) == false)
+                        {
+                            alerts.Add(new warning(includes[i].Start.Line, $"Attribute value '{a.Name}' is set twice or more. Only the last defined will be valid"));
+                        }
+                    }
+                }
+            }
+
+            foreach (var attr in context.attr())
+            {
+                dynamic attrToAdd = VisitAttr(attr);
+                if (attrToAdd != null)
+                {
+                    attrToAdd = (Attribute)attrToAdd;
+                    if (objectAttributes.Add(attrToAdd) == false)
+                    {
+                        alerts.Add(new warning(attr.Start.Line, $"Attribute value '{attrToAdd.Name}' is set twice or more. Only the last defined will be valid"));
+                    }
+                }
+            }
+
+            //TODO: rotation-ös dolgok.
+
+            return objectAttributes;
         }
 
         /* Attribútum mixin-t nézünk meg.
@@ -462,7 +579,7 @@ namespace _3D_layout_script
          * Mindig a forráskódban lentebb lévő attribútum fogja hordozni a valódi értéket.
          * 
          * Kivétel a rotation-axis és rotation-angle, mert könnyen lehet, hogy a felhasználó forgatások sorozatát akarja alkalmazni.
-         */ 
+         */
         public override object VisitAttr_group([NotNull] DDD_layout_scriptParser.Attr_groupContext context)
         {
             AttributeBlock attributeBlock = new AttributeBlock(context.STRING().GetText());
@@ -482,7 +599,17 @@ namespace _3D_layout_script
                 }
             }
 
-            return attributeBlock;
+            foreach (var attrBlock in attributeBlocks)
+            {
+                if (attrBlock.Name == attributeBlock.Name)
+                {
+                    alerts.Add(new error(context.Start.Line, $"There is another attr-block defined with the name '{attributeBlock.Name}'. This one is ignored"));
+                    return null;
+                }
+            }
+
+            attributeBlocks.Add(attributeBlock);
+            return null;
         }
 
         /* Bal oldalt az attributum neve, jobb oldalt érték.
