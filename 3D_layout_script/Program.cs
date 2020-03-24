@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
-
+using _3D_layout_script.Objects;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
@@ -10,13 +11,7 @@ namespace _3D_layout_script
 {
     class Program
     {
-        class ErrorListener : IAntlrErrorListener<int>
-        {
-            public void SyntaxError([NotNull] IRecognizer recognizer, [Nullable] int offendingSymbol, int line, int charPositionInLine, [NotNull] string msg, [Nullable] RecognitionException e)
-            {
-                Console.WriteLine(msg);
-            }
-        }
+       
 
         static IParseTree ReadAST(string fileName)
         {
@@ -24,8 +19,8 @@ namespace _3D_layout_script
             var inputStream = new AntlrInputStream(code);
             var lexer = new DDD_layout_scriptLexer(inputStream);
 
-            lexer.RemoveErrorListeners();
-            lexer.AddErrorListener(new ErrorListener());
+            //lexer.RemoveErrorListeners();
+            //lexer.AddErrorListener(new ErrorListener());
 
 
             var tokenStream = new CommonTokenStream(lexer);
@@ -41,7 +36,11 @@ namespace _3D_layout_script
         {
             var ast = ReadAST("test.ddd");
             var visitor = new Visitor();
-            visitor.Visit(ast);
+
+            List<DDDObject> objects = (List<DDDObject>)visitor.Visit(ast);
+            objects[0].GenerateStandaloneObj();
+
+
 
             visitor.PrintErrorsToConsole();
             visitor.PrintSymbolTree();

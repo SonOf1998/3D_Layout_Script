@@ -499,7 +499,12 @@ namespace _3D_layout_script
                 alerts.Add(new warning(context.Start.Line, $"For '{context.OBJECT_TYPE().GetText()}' [{dddObject.WarningMsg}] attributes are defined. Others will be ignored"));
             }
 
-            return dddObject;
+            if (dddObject != null)
+            {
+                DDDObjects.Add(dddObject);
+            }
+
+            return null;
         }
 
         /* 3D objektumok attribútumlistáját készíti elő.
@@ -509,6 +514,7 @@ namespace _3D_layout_script
          * Ha nem talál egy attr-group-ot az persze error.
          * 
          * Ezután az összes nem attr-groupból származó attribútumon is végigmegy. Ezeket is hozzáadja a közös listához.
+         * A végén összerendeli a rotation-axis, rotation-angle párokat. 
          */ 
         public override object VisitObject_content([NotNull] DDD_layout_scriptParser.Object_contentContext context)
         {
@@ -565,7 +571,38 @@ namespace _3D_layout_script
                 }
             }
 
-            //TODO: rotation-ös dolgok.
+            /* Megnézzük, hogy szögből több volt-e megadva mint forgatási tengelyből vagy épp fordítva.
+             * 
+             * Ha több szög volt, mint forgatási tengely, akkor az extra szögeket kivesszük a listából és warning-ot hozunk fel.
+             * Fordított esetben, az extra forgatási tengelyekhez, hozzárendeljük a forráskódban (blokkra nézve) utolsó definiált szöget.
+             * Ha ilyen nincs akkor szimplán 0°-ot rendelünk hozzá. Mindkettő esetben warning-ot dobunk.
+             */ 
+            int rotAnglesCnt = 0;
+            int rotAxesCnt = 0;
+
+            foreach (var attr in objectAttributes)
+            {
+                if (attr.Name == "rotation-angle")
+                {
+                    rotAnglesCnt++;
+                }
+                else if (attr.Name == "rotation-axis")
+                {
+                    rotAxesCnt++;
+                }
+            }
+
+            if (rotAnglesCnt > rotAxesCnt)
+            {
+                alerts.Add(new warning(context.Start.Line - 1, "There are more 'rotation-angle' defined than 'rotation-axis'. The extra ones will be ignored"));
+                objectAttributes.FitRotationAngles(rotAxesCnt);
+            }
+            else if (rotAxesCnt > rotAnglesCnt)
+            {
+                alerts.Add(new warning(context.Start.Line - 1, "There are more 'rotation-axis' defined than 'rotation-angle'. The extra ones will be using the last defined 'rotation-angle' value or the default 0°"));
+                objectAttributes.FitRotationAxes(rotAxesCnt - rotAnglesCnt);
+            }
+
 
             return objectAttributes;
         }
@@ -643,7 +680,7 @@ namespace _3D_layout_script
 #if RELEASE
             symbolTable = null;
 #endif
-            return null;
+            return DDDObjects;
         }
 
         /* If blokkon megyünk végig

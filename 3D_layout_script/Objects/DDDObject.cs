@@ -29,6 +29,8 @@ namespace _3D_layout_script.Objects
         public DDDObject()
         {
             allowedAttributes = new HashSet<string>();
+            rotationAngles = new List<double>();
+            rotationAxes = new List<vec3>();
 
             allowedAttributes.Add("position");
             allowedAttributes.Add("rotation-axis");
@@ -53,10 +55,10 @@ namespace _3D_layout_script.Objects
                         position = attr.Value;
                         break;
                     case "rotation-angle":
-                        //TODO
+                        rotationAngles.Add(attr.Value);
                         break;
                     case "rotation-axis":
-                        //TODO
+                        rotationAxes.Add(attr.Value);
                         break;
                     case "default":
                         // ősosztály valósítja meg
@@ -82,7 +84,7 @@ namespace _3D_layout_script.Objects
 
         public virtual void GenerateStandaloneObj()
         {
-
+            System.Console.WriteLine($"{rotationAxes.Count} {rotationAngles.Count}");
         }
     }
 }
