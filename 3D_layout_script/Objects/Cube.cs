@@ -4,11 +4,11 @@ namespace _3D_layout_script.Objects
 {
     public class Cube : DDDObject
     {
-        private double width;
+        private double width = 0;
 
         public Cube() : base()
         {
-            allowedAttributes.Add("width");
+            requiredAttributes.Add("width");
         }
 
         public override bool SetAttributes(AttributeList attrList)

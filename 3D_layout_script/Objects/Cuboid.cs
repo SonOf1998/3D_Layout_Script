@@ -4,15 +4,15 @@ namespace _3D_layout_script.Objects
 {
     public class Cuboid : DDDObject
     {
-        private double width;
-        private double height;
-        private double depth;
+        private double width = 0;
+        private double height = 0;
+        private double depth = 0;
 
         public Cuboid() : base()
         {
-            allowedAttributes.Add("width");
-            allowedAttributes.Add("height");
-            allowedAttributes.Add("depth");
+            requiredAttributes.Add("width");
+            requiredAttributes.Add("height");
+            requiredAttributes.Add("depth");
         }
 
         public override bool SetAttributes(AttributeList attrList)

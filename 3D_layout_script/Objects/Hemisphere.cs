@@ -4,11 +4,11 @@ namespace _3D_layout_script.Objects
 {
     public class Hemisphere : DDDObject
     {
-        private double radius;
+        private double radius = 0;
 
         public Hemisphere() : base()
         {
-            allowedAttributes.Add("radius");
+            requiredAttributes.Add("radius");
         }
 
         public override bool SetAttributes(AttributeList attrList)

@@ -201,9 +201,7 @@ namespace _3D_layout_script
                     return false;
                 }
             }
-
-            
-
+                       
 
             return true;
         }
@@ -496,7 +494,8 @@ namespace _3D_layout_script
 
             if (dddObject.SetAttributes(attributeList) == false)
             {
-                alerts.Add(new warning(context.Start.Line, $"For '{context.OBJECT_TYPE().GetText()}' [{dddObject.WarningMsg}] attributes are defined. Others will be ignored"));
+                alerts.Add(new warning(context.Start.Line, $"For '{context.OBJECT_TYPE().GetText()}' [{dddObject.WarningMsg}] attributes are defined. Others will be ignored. " +
+                                                           $"Missing required(*) attributes will default to 0 or [0, 0, 0]"));
             }
 
             if (dddObject != null)

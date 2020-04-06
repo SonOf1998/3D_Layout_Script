@@ -6,11 +6,11 @@ namespace _3D_layout_script.Objects
 {
     public class Triangle : DDDObject
     {
-        private double width;
+        private double width = 0;
 
         public Triangle() : base()
         {
-            allowedAttributes.Add("width");
+            requiredAttributes.Add("width");
         }
 
         public override bool SetAttributes(AttributeList attrList)

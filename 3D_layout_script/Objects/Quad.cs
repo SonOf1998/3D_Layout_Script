@@ -4,13 +4,13 @@ namespace _3D_layout_script.Objects
 {
     public class Quad : DDDObject
     {
-        private double width;
-        private double height;
+        private double width = 0;
+        private double height = 0;
 
         public Quad() : base()
         {
-            allowedAttributes.Add("width");
-            allowedAttributes.Add("height");
+            requiredAttributes.Add("width");
+            requiredAttributes.Add("height");
         }
 
         public override bool SetAttributes(AttributeList attrList)

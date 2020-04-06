@@ -78,6 +78,8 @@
     <Compile Include="Objects\Quad.cs" />
     <Compile Include="Objects\Sphere.cs" />
     <Compile Include="Objects\Triangle.cs" />
+    <Compile Include="ObjExport\ExportManager.cs" />
+    <Compile Include="ObjExport\ObjExportManager.cs" />
     <Compile Include="OtherBinaryOperation.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -97,6 +99,9 @@
       <TargetLanguage>CSharp</TargetLanguage>
     </Antlr4>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ObjTemplates\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

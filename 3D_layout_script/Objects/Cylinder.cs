@@ -4,13 +4,13 @@ namespace _3D_layout_script.Objects
 {
     public class Cylinder : DDDObject
     {
-        private double radius;
-        private double height;
+        private double radius = 0;
+        private double height = 0;
 
         public Cylinder() : base()
         {
-            allowedAttributes.Add("height");
-            allowedAttributes.Add("radius");
+            requiredAttributes.Add("height");
+            requiredAttributes.Add("radius");
         }
 
         public override bool SetAttributes(AttributeList attrList)

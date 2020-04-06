@@ -38,7 +38,7 @@ namespace _3D_layout_script
             var visitor = new Visitor();
 
             List<DDDObject> objects = (List<DDDObject>)visitor.Visit(ast);
-            objects[0].GenerateStandaloneObj();
+            O
 
 
 
