@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using _3D_layout_script.Objects;
 using _3D_layout_script.ObjExport;
@@ -33,7 +34,7 @@ namespace _3D_layout_script
 
         static void Main(string[] args)
         {
-            var ast = ReadAST("test.ddd");
+            var ast = ReadAST("karacsony.ddd");
             var visitor = new Visitor();
 
             List<DDDObject> objects = (List<DDDObject>)visitor.Visit(ast);
@@ -41,13 +42,16 @@ namespace _3D_layout_script
             em.Export(objects);
             Console.WriteLine(".obj generated!");
 
+            // default win10 3D viewert nyitja meg
+            Process process = new Process();
+            process.StartInfo.FileName = "színtér.obj";
+            process.Start();
 
             visitor.PrintErrorsToConsole();
             visitor.PrintSymbolTree();
-            
-            
 
             Console.ReadKey();
+            
         }
     }
 }

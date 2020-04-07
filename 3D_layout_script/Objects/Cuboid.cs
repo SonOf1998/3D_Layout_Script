@@ -44,7 +44,7 @@ namespace _3D_layout_script.Objects
 
         public override ObjFile GenerateStandaloneObj()
         {
-            ObjFile objFile = base.GenerateStandaloneObj();     // rotated
+            ObjFile objFile = base.GenerateStandaloneObj();     // generated
 
             List<string> vertices = objFile.Vertices;
             List<string> newVertices = new List<string>(vertices.Count);
@@ -64,8 +64,9 @@ namespace _3D_layout_script.Objects
                 newVertices.Add($"{splitVertex[0]} {x} {y} {z}");
             }
 
-            objFile = new ObjFile(newVertices, objFile.Normals, objFile.Faces);
-            return TranslateWithPosition(objFile);
+            objFile = new ObjFile(newVertices, objFile.Normals, objFile.Faces);     // scaled
+            objFile = RotateByAxisAnglePair(objFile);                               // rotated
+            return TranslateWithPosition(objFile);                                  // translated
         }
     }
 }

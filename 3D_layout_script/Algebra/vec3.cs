@@ -17,6 +17,8 @@ namespace _3D_layout_script
 
         }
 
+        public vec3(vec3 v) : this(v.x, v.y, v.z) { }
+
         public vec3(double x, double y, double z)
         {
             this.x = x;

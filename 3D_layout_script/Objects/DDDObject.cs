@@ -75,13 +75,14 @@ namespace _3D_layout_script.Objects
                 switch (attr.Name)
                 {
                     case "position":
-                        position = attr.Value;
+                        // new vec3, hogy a referenciákat megszüntessük a visitorral
+                        position = new vec3(attr.Value);
                         break;
                     case "rotation-angle":
                         rotationAngles.Add(attr.Value);
                         break;
                     case "rotation-axis":
-                        rotationAxes.Add(attr.Value);
+                        rotationAxes.Add(new vec3(attr.Value));
                         break;
                     case "default":
                         // ősosztály valósítja meg
@@ -136,8 +137,69 @@ namespace _3D_layout_script.Objects
 
             return new ObjFile(transformedVertices, obj.Normals, obj.Faces);
         }
+
+        // őszosztály el tudja végezni a forgatásokat
+        protected ObjFile RotateByAxisAnglePair(ObjFile obj)
+        {
+            List<string> vertices = obj.Vertices;
+            List<string> newVertices = new List<string>(vertices.Count);
+            List<string> normals = obj.Normals;
+            List<string> newNormals = new List<string>(normals.Count);
+
+            foreach (var vertex in vertices)
+            {
+                string newLine = vertex;
+                if (rotationAngles.Count > 0)
+                {
+                    string[] splitLine = vertex.Split(' ');
+
+                    double x = Double.Parse(splitLine[1]);
+                    double y = Double.Parse(splitLine[2]);
+                    double z = Double.Parse(splitLine[3]);
+
+                    vec3 point = new vec3(x, y, z);
+
+                    for (int i = 0; i < rotationAngles.Count; ++i)
+                    {
+                        point = Quaternion.Rotate(point, rotationAxes[i], rotationAngles[i]);
+                    }
+
+                    newLine = $"{splitLine[0]} {point.x} {point.y} {point.z}";
+                }
+
+                newVertices.Add(newLine);
+            }
+
+            foreach (var normal in normals)
+            {
+                string newLine = normal;
+                if (rotationAngles.Count > 0)
+                {
+                    string[] splitLine = normal.Split(' ');
+
+                    double x = Double.Parse(splitLine[1]);
+                    double y = Double.Parse(splitLine[2]);
+                    double z = Double.Parse(splitLine[3]);
+
+                    vec3 point = new vec3(x, y, z);
+
+                    for (int i = 0; i < rotationAngles.Count; ++i)
+                    {
+                        point = Quaternion.Rotate(point, rotationAxes[i], rotationAngles[i]);
+                    }
+
+                    point = vec3.Normalize(point);
+                    newLine = $"{splitLine[0]} {point.x} {point.y} {point.z}";
+                }
+
+                newNormals.Add(newLine);
+            }
+
+            return new ObjFile(newVertices, newNormals, obj.Faces);
+        } 
+
         
-        // ősosztály el tudja végezni a rotációt
+        // ősosztály csak beolvas
         public virtual ObjFile GenerateStandaloneObj()
         {
             List<string> vertices = new List<string>();
@@ -151,25 +213,7 @@ namespace _3D_layout_script.Objects
                 while ((line = sr.ReadLine()) != null)
                 {
                     if (line.Contains('v') && !line.Contains('#'))
-                    {
-                        if (rotationAngles.Count > 0)
-                        {
-                            string[] splitLine = line.Split(' ');
-                    
-                            double x = Double.Parse(splitLine[1]);
-                            double y = Double.Parse(splitLine[2]);
-                            double z = Double.Parse(splitLine[3]);
-
-                            vec3 point = new vec3(x, y, z);
-
-                            for (int i = 0; i < rotationAngles.Count; ++i)
-                            {
-                                point = Quaternion.Rotate(point, rotationAxes[i], rotationAngles[i]);
-                            }
-
-                            line = $"{splitLine[0]} {point.x} {point.y} {point.z}";
-                        }
-                                               
+                    {                                               
                         if (line.Contains('n'))
                         {
                             normals.Add(line);

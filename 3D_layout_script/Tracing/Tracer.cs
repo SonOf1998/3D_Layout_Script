@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System;
+using _3D_layout_script.Objects;
 
 namespace _3D_layout_script
 {
@@ -35,6 +36,14 @@ namespace _3D_layout_script
             }
 
             Console.WriteLine();
+        }
+
+        public static void Print(List<DDDObject> list)
+        {
+            foreach (var obj in list)
+            {
+                //obj.
+            }
         }
     }
 }

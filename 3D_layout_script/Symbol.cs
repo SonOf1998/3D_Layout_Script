@@ -17,6 +17,11 @@
             
         }
 
+        public Symbol(Symbol symbol) : this(symbol.Const, symbol.IsIterator, symbol.Type, symbol.Name)
+        {
+
+        }
+
         public Symbol(bool isConst, bool isIter, string type, string name)
         {
             Const = isConst;

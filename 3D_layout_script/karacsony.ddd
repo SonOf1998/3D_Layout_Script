@@ -1,0 +1,88 @@
+var $snow_ball_base : Vec3 = [-5, 0, 1];
+var $xmas_tree_base : Vec3 = [4, 0, 3];
+var $min_factor = 1;
+
+
+/* fatörzs */
+cylinder
+{
+	position: $xmas_tree_base;
+	radius : 0.333;
+	height : 1;
+}
+
+$xmas_tree_base.y += 0.7;
+for (var $i in [0, 3))
+{	
+	const var $rad = 1 * $min_factor;
+	const var $h = 2 * $min_factor;
+	const var $h_diff = 1.5 * $min_factor;
+	
+	/* hóember gömbjei */
+	sphere
+	{
+		position : $snow_ball_base;
+		radius : $rad;
+	}	
+	
+	
+	/* fa lombjai */
+	cone
+	{
+		position : $xmas_tree_base;
+		radius : $rad;
+		height : $h;
+	}
+	
+	/* kúpot alul záró kör */
+	circle
+	{
+		position : $xmas_tree_base;
+		radius : $rad;
+	}
+	
+	
+	$snow_ball_base.y += 1.75 * $min_factor;	
+	$xmas_tree_base.y += $h_diff;
+	$min_factor *= 0.8;
+}
+
+/* kalap */
+circle
+{
+	position : $snow_ball_base + [0, 0.1, 0];
+	radius : 0.5;
+}
+
+cylinder
+{
+	position : $snow_ball_base + [0, 0.1, 0];
+	radius : 0.3;
+	height : 0.5;
+}
+
+/* orr */
+cone
+{
+	radius : 0.05;
+	height : 0.5;
+	rotation-angle : -90;
+	rotation-axis : [0, 0, 1];
+	rotation-angle : -45;
+	rotation-axis : [0, 1, 0];
+	position : [$snow_ball_base.x + 0.4, $snow_ball_base.y - 0.4, $snow_ball_base.z + 0.4];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

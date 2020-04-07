@@ -11,6 +11,11 @@ namespace _3D_layout_script.Attributes
             list = new List<Attribute>();
         }
 
+        public AttributeList(AttributeList other)
+        {
+            list = new List<Attribute>(other.list);
+        }
+
         public bool Add(Attribute attr)
         {
             if (!(attr.Name == "rotation-axis" || attr.Name == "rotation-angle"))
