@@ -9,6 +9,8 @@ const var $origin = [0, 0, 0];
 quad
 {
 	position : $origin;
+	rotation-axis : [0, 0, 1];
+	rotation-angle : 45;
 	width : 1;
 	height : 1;
 }
@@ -28,27 +30,19 @@ if (1 != 1)
 }
 else
 {
-	triangle
+	sphere
 	{
-		position : [0, 0, 0];
-		rotation-angle : 90;
-		rotation-axis : [1, 0, 0];
-		width : 2;
+		position: [0, 0, 0];
+		radius : 1;
 	}
 	
 	
-	hemisphere
-	{
-		position : [0, 0, 0];
-		radius : 1.0f;
-	}
-	
-	circle
-	{
-		position : [0, 1, 0];
-		radius : 1.0f;
-		height : 2;
-	}
+	//circle
+	//{
+	//	position : [0, 1, 0];
+	//	radius : 1.0f;
+	//	height : 2;
+	//}
 	
 }
 

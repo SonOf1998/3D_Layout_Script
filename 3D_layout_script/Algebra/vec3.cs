@@ -1,4 +1,6 @@
-﻿/* Vektor osztály
+﻿using static System.Math;
+
+/* Vektor osztály
  * operátorok átdefiniálva
  * 
  */ 
@@ -96,6 +98,12 @@ namespace _3D_layout_script
         public static vec3 Cross(vec3 a, vec3 b)
         {
             return new vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+        }
+
+        // normalizálás
+        public static vec3 Normalize(vec3 v)
+        {
+            return v / Sqrt(Dot(v, v));
         }
     }
 }

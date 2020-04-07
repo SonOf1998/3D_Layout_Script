@@ -17,8 +17,8 @@ namespace _3D_layout_script
 
         private Quaternion(vec3 point, vec3 axis, double angle)
         {
-            scalar = Cos(angle);
-            vec = axis * Sin(angle);
+            scalar = Cos(angle / 2);
+            vec = axis * Sin(angle / 2);
             this.angle = angle;
         }
 
@@ -39,7 +39,7 @@ namespace _3D_layout_script
 
         public static vec3 Rotate(vec3 point, vec3 axis, double angle)
         {
-            Quaternion q = new Quaternion(point, axis, angle);
+            Quaternion q = new Quaternion(point, Normalize(axis), angle * (PI / 180));
             Quaternion qinv = q.inverse();
             Quaternion v = new Quaternion(0, point);
 
