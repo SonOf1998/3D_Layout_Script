@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using _3D_layout_script.Objects;
+using _3D_layout_script.ObjExport;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
@@ -10,9 +11,7 @@ using Antlr4.Runtime.Tree;
 namespace _3D_layout_script
 {
     class Program
-    {
-       
-
+    {       
         static IParseTree ReadAST(string fileName)
         {
             var code = File.ReadAllText(Path.Combine(Environment.CurrentDirectory, fileName));
@@ -38,8 +37,9 @@ namespace _3D_layout_script
             var visitor = new Visitor();
 
             List<DDDObject> objects = (List<DDDObject>)visitor.Visit(ast);
-            O
-
+            ExportManager em = new ObjExportManager("színtér");
+            em.Export(objects);
+            Console.WriteLine(".obj generated!");
 
 
             visitor.PrintErrorsToConsole();

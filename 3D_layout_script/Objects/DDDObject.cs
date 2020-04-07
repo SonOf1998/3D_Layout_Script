@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using _3D_layout_script.Attributes;
+using _3D_layout_script.ObjExport;
+using System;
 
 namespace _3D_layout_script.Objects
 {
@@ -21,6 +24,8 @@ namespace _3D_layout_script.Objects
             }
         }
 
+        readonly string objTemplateFileName;
+
         protected HashSet<string> allowedAttributes;    // minden más attribútum
         protected HashSet<string> requiredAttributes;   // kötelezően megadandó attribútumok
 
@@ -28,7 +33,7 @@ namespace _3D_layout_script.Objects
         protected List<vec3>   rotationAxes;
         protected List<double> rotationAngles;
 
-        public DDDObject()
+        private DDDObject()
         {
             allowedAttributes = new HashSet<string>();
             requiredAttributes = new HashSet<string>();
@@ -40,12 +45,15 @@ namespace _3D_layout_script.Objects
             allowedAttributes.Add("rotation-angle");
         }
 
+        public DDDObject(string objTemplateFileName) : this()
+        {
+            this.objTemplateFileName = "ObjTemplates/" + objTemplateFileName;
+        }
       
 
         public virtual bool SetAttributes(AttributeList attrList)
         {
             bool ret = true;    // Minden attribútum sikeresen hozzáadódott.
-
             var attrNameList = attrList.GetAttributeList().Select(attr => attr.Name);
 
             // ha az attribute list nem tartalmazza az összes required attribute-ot, akkor default értéket kell használnunk.
@@ -64,8 +72,6 @@ namespace _3D_layout_script.Objects
                     ret = false;
                 }
                 
-
-
                 switch (attr.Name)
                 {
                     case "position":
@@ -106,11 +112,81 @@ namespace _3D_layout_script.Objects
             return ret;
         }
 
-        //public abstract void GENERATE() <--- TODO
-
-        public virtual void GenerateStandaloneObj()
+        // Eltolást végzi éppen az ObjFile ObjExportManagernek-ek való átadása előtt.
+        // (eltolás - model transzformáció utolsó lépése)
+        protected ObjFile TranslateWithPosition(ObjFile obj)
         {
-            System.Console.WriteLine($"{rotationAxes.Count} {rotationAngles.Count}");
+            List<string> vertices = obj.Vertices;
+            List<string> transformedVertices = new List<string>(vertices.Count);
+           
+            foreach (var vertex in vertices)
+            {
+                string[] splitVertex = vertex.Split(' ');
+
+                double x = Double.Parse(splitVertex[1]);
+                double y = Double.Parse(splitVertex[2]);
+                double z = Double.Parse(splitVertex[3]);
+
+                x += position.x;
+                y += position.y;
+                z += position.z;    // balkezes koordinátarendszer, ami beljebb annak nagyobb a Z koordinátája
+
+                transformedVertices.Add($"{splitVertex[0]} {x} {y} {z}");
+            }
+
+            return new ObjFile(transformedVertices, obj.Normals, obj.Faces);
+        }
+        
+        // ősosztály el tudja végezni a rotációt
+        public virtual ObjFile GenerateStandaloneObj()
+        {
+            List<string> vertices = new List<string>();
+            List<string> normals = new List<string>();
+            List<string> faces = new List<string>();
+
+            // RAII, Readonly megnyitása az .obj template-nek.
+            using (StreamReader sr = new StreamReader(File.OpenRead(objTemplateFileName)))
+            {
+                string line;
+                while ((line = sr.ReadLine()) != null)
+                {
+                    if (line.Contains('v') && !line.Contains('#'))
+                    {
+                        if (rotationAngles.Count > 0)
+                        {
+                            string[] splitLine = line.Split(' ');
+                    
+                            double x = Double.Parse(splitLine[1]);
+                            double y = Double.Parse(splitLine[2]);
+                            double z = Double.Parse(splitLine[3]);
+
+                            vec3 point = new vec3(x, y, z);
+
+                            for (int i = 0; i < rotationAngles.Count; ++i)
+                            {
+                                point = Quaternion.Rotate(point, rotationAxes[i], rotationAngles[i]);
+                            }
+
+                            line = $"{splitLine[0]} {point.x} {point.y} {point.z}";
+                        }
+                                               
+                        if (line.Contains('n'))
+                        {
+                            normals.Add(line);
+                        }
+                        else
+                        {
+                            vertices.Add(line);
+                        }
+                    }
+                    else if (line.Contains('f') && !line.Contains('#'))
+                    {
+                        faces.Add(line);
+                    }
+                }
+            }
+
+            return new ObjFile(vertices, normals, faces);
         }
     }
 }

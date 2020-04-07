@@ -657,7 +657,8 @@ namespace _3D_layout_script
         {
             string attrName = context.ATTRIBUTE().GetText();
             dynamic value = VisitOperation(context.operation());
-
+            
+            // TODO !!!!!!!!!!!!!!!!!!!!!!! egyenlőségjjelre kiakad, pedig az szintaktikai hiba
             if (!AttributeManager.CanBind(attrName,  Extensions.Extensions.ToString(value)))
             {
                 alerts.Add(new warning(context.Start.Line, $"{AttributeManager.ErrorMsg}. Line ignored"));

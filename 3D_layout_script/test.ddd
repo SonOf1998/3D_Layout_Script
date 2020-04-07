@@ -1,0 +1,58 @@
+const var $range_start = 0;
+const var $range_end = 1;
+const var $vec : Vec3 = [0, 3.6, 0];
+var $vek : Vec3;
+
+
+const var $origin = [0, 0, 0];
+
+quad
+{
+	position : $origin;
+	width : 1;
+	height : 1;
+}
+
+
+if (1 != 1)
+{
+	const var $c;
+	
+	
+	cuboid
+	{
+		@include('ce');
+		rotation-angle : 45.0;
+	}
+		
+}
+else
+{
+	triangle
+	{
+		position : [0, 0, 0];
+		rotation-angle : 90;
+		rotation-axis : [1, 0, 0];
+		width : 2;
+	}
+	
+	
+	hemisphere
+	{
+		position : [0, 0, 0];
+		radius : 1.0f;
+	}
+	
+	circle
+	{
+		position : [0, 1, 0];
+		radius : 1.0f;
+		height : 2;
+	}
+	
+}
+
+
+
+
+

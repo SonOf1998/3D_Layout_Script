@@ -83,5 +83,19 @@ namespace _3D_layout_script
         {
             return !(a == b);
         }
+
+
+
+        // skaláris szorzat
+        public static double Dot(vec3 a, vec3 b)
+        {
+            return a.x * b.x + a.y * b.y + a.z * b.z;
+        }
+
+        // vektorszorzat
+        public static vec3 Cross(vec3 a, vec3 b)
+        {
+            return new vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+        }
     }
 }
